@@ -1,5 +1,4 @@
 import typer
-
 import client
 import server
 
@@ -12,10 +11,7 @@ def hello(name: str, iq: int):
 
 
 @app.command()
-def start_server(host: str = server.host, port=server.port):
-    port = int(port)
-    # print(type(host))
-    # print(host + "  " + str(port))
+def start_server(host: str = server.host, port=int(server.port)):
     server.start_server('', port)
 
 
