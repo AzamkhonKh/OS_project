@@ -1,42 +1,47 @@
 # first of all import the socket library
 import socket
+import _thread as thread
+from helper import env_vars,console_line
 
-port = 12345
-host = 'localhost'
+class Server:
+    port = env_vars['server_listening_port']
+    host = env_vars['server_host']
+    # it will be getted by ip in network or from env file (in future)
 
+    users = []
 
-def start_server(host,port):
-    # next create a socket object
-    s = socket.socket()
-    print("Socket successfully created")
+    @classmethod
+    def start_server(self,host, port):
+        # next create a socket object
+        s = socket.socket()
+        print("Socket successfully created")
 
-    # reserve a port on your computer in our
-    # case it is 12345 but it can be anything
+        s.bind((host, port))
+        print("host is %s" % (host))
+        print("socket binded to %s" % (port))
 
-    # Next bind to the port
-    # we have not typed any ip in the ip field
-    # instead we have inputted an empty string
-    # this makes the server listen to requests
-    # coming from other computers on the network
-    s.bind((host, port))
-    print("socket binded to %s" % (port))
+        s.listen(5)
+        print("socket is listening")
 
-    # put the socket into listening mode
-    s.listen(5)
-    print("socket is listening")
+        # a forever loop until we interrupt it or
+        # an error occurs
+        while True:
+            # Establish connection with client.
+            c, addr = s.accept()
+            print('Got connection from', addr)
+            try:
+                thread.start_new_thread(self.create_session,(c, addr))
+            except Exception as e:
+                print('Error occured client closed message : ' + str(e))
+                c.close()
+            finally:
+                print('out from try catch successfully !')
+            # Close the connection with the client
 
-    # a forever loop until we interrupt it or
-    # an error occurs
-    while True:
-        # Establish connection with client.
-        c, addr = s.accept()
-        print('Got connection from', addr)
-
-        # send a thank you message to the client. encoding to send byte type.
-        c.send('Thank you for connecting'.encode())
-
-        # Close the connection with the client
+    @classmethod
+    def create_session(self, c, addr):
+        print(addr)
+        c.send('Succes azamkhon'.encode())
+        # console_line()
+        # raise Exception('error')
         c.close()
-
-        # Breaking once connection closed
-        break

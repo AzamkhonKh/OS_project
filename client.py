@@ -1,8 +1,9 @@
 # Import socket module
 import socket
+from helper import env_vars
 
-host = 'localhost'
-port = 12345
+host = env_vars['client_host']
+port = env_vars['server_listening_port']
 
 
 def test(host, port):

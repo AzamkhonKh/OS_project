@@ -1,6 +1,6 @@
 import typer
 import client
-import server
+from server import Server
 
 app = typer.Typer()
 
@@ -11,13 +11,13 @@ def hello(name: str, iq: int):
 
 
 @app.command()
-def start_server(host: str = server.host, port=int(server.port)):
-    server.start_server('', port)
+def start_server(host: str = Server.host, port : int = int(Server.port)):
+    Server.start_server(host, port)
 
 
 @app.command()
-def start_client(host: str = client.host, port: int = int(client.port)):
-    client.test('127.0.0.1', port)
+def start_client_test(host: str = client.host, port: int = int(client.port)):
+    client.test(host, port)
 
 
 @app.command()
