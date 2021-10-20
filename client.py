@@ -6,7 +6,11 @@ host = env_vars['client_host']
 port = env_vars['server_listening_port']
 
 
-# def sendMessage(socket):
+def sendMessage(socket, input_message: str = "input something: "):
+    message = input(input_message)
+    # while message != env_vars["exit_word"]:
+    socket.send(message.encode())
+    return socket.recv(1024).decode()
 
 
 def test(host, port):
@@ -17,13 +21,11 @@ def test(host, port):
 
     # connect to the server on local computer
     s.connect((host, port))
-    s.send("something from client".encode())
+    #  there serever should say smth like hey i see you clien
+    #  if this not happens smth went wrong
+    print(s.recv(1024).decode())
+    print("__________")
     # receive data from the server and decoding to get the string.
-    message = s.recv(1024).decode()
-    while message != "close":
-        s.send(message.encode())
-        print(message)
-        message = input("input something: ")
     # close the connection
-    # console_line("send something to server",sendMessage(s))
+    console_line(sendMessage, s, "send something to server: ")
     s.close()
