@@ -1,4 +1,4 @@
-# Import socket module
+import sys
 import socket
 from helper import env_vars, console_line
 
@@ -28,4 +28,4 @@ def test(host, port):
     # receive data from the server and decoding to get the string.
     # close the connection
     console_line(sendMessage, s, "send something to server: ")
-    s.close()
+    sys.exit()

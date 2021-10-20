@@ -47,24 +47,22 @@ class Server:
             sys.exit()
 
     @classmethod
-    def create_session(self, c, addr):
+    def create_session(self, c, addr, otherData=None):
         print(addr)
         c.send('Succes azamkhon ! \n'.encode())
-        # console_line()
-        # raise Exception('error')
-        message = ''
-        while True:
-            message = c.recv(1024).decode()
-            if message != env_vars["exit_word"]:
-                print("received something: " + message)
-                self.send_message_to_client("recieved OK", c)
-                sleep(5)
-            else:
-                break
-        c.send(env_vars["exit_word"].encode())
-        c.close()
+        console_line(self.receive_message_from_client, c, "", False)
         sys.exit()
 
     @classmethod
     def send_message_to_client(cls, msg, conn):
         conn.send(msg.encode())
+
+    @classmethod
+    def receive_message_from_client(cls, conn):
+        message = conn.recv(1024).decode()
+        print("received something from ...: " + message)
+        if message != env_vars["exit_word"]:
+            cls.send_message_to_client("recieved OK", conn)
+        else:
+            cls.send_message_to_client(message, conn)
+        return message
