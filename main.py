@@ -11,13 +11,13 @@ def hello(name: str, iq: int):
 
 
 @app.command()
-def start_server(host: str = Server.host, port : int = int(Server.port)):
-    Server.start_server(host, port)
+def start_server(host: str = Server.host):
+    Server.start_server()
 
 
 @app.command()
-def start_client_test(host: str = client.host, port: int = int(client.port)):
-    client.test(host, port)
+def start_client_test(username: str, host: str = client.host, port: int = int(client.port)):
+    client.test(username, host, port)
 
 
 @app.command()

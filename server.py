@@ -2,7 +2,6 @@
 import socket
 import _thread as thread
 import sys
-from time import sleep
 
 from helper import env_vars, console_line
 
@@ -12,18 +11,19 @@ class Server:
     host = env_vars['server_host']
     # it will be getted by ip in network or from env file (in future)
 
-    users = []
+    users = dict()
 
+    # username : dict(data like )
     @classmethod
-    def start_server(cls, host, port):
+    def start_server(cls):
         # next create a socket object
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             print("Socket successfully created")
 
-            s.bind((host, port))
-            print("host is %s" % (host))
-            print("socket binded to %s" % (port))
+            s.bind((cls.host, cls.port))
+            print("host is %s" % (cls.host))
+            print("socket binded to %s" % (cls.port))
 
             s.listen(5)
             print("socket is listening")
@@ -33,9 +33,23 @@ class Server:
             while True:
                 # Establish connection with client.
                 c, addr = s.accept()
-                print('Got connection from', addr)
+                username = ''
+                msg = c.recv(1024).decode()
+                if msg.startswith("username: "):
+                    username = msg[len("username: "):len(msg)]
+                else:
+                    print(f"received not username so closed connection ! recv({msg})")
+                    c.close()
+                print('Got connection from', username)
+                cls.users[username] = {
+                    "name": username,
+                    "socket": s,
+                    "addr": addr,
+                    "connection": c,
+                    "type": "server"
+                }
                 try:
-                    thread.start_new_thread(cls.create_session, (c, addr))
+                    thread.start_new_thread(cls.create_session, (c, cls.users[username]))
                 except Exception as e:
                     print('Error occured client closed message : ' + str(e))
                     sys.exit()
@@ -47,10 +61,9 @@ class Server:
             sys.exit()
 
     @classmethod
-    def create_session(self, c, addr, otherData=None):
-        print(addr)
-        c.send('Succes azamkhon ! \n'.encode())
-        console_line(self.receive_message_from_client, c, "", False)
+    def create_session(cls, c, user_data):
+        c.send(f'Succes {user_data["name"]} ! \n'.encode())
+        console_line(cls.receive_message_from_client, user_data, "", False)
         sys.exit()
 
     @classmethod
@@ -58,9 +71,10 @@ class Server:
         conn.send(msg.encode())
 
     @classmethod
-    def receive_message_from_client(cls, conn):
+    def receive_message_from_client(cls, user_data):
+        conn = user_data["connection"]
         message = conn.recv(1024).decode()
-        print("received something from ...: " + message)
+        print(f"received something from {user_data['name']}: " + message)
         if message != env_vars["exit_word"]:
             cls.send_message_to_client("recieved OK", conn)
         else:

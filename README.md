@@ -13,8 +13,12 @@ to get how we can interact with program and see available commands
 
 #### to run clinet or interact with it
 
-`python3 main.py start-client-test`
-or 
+`python3 main.py start-client-test {username}`
+
+for example:
+`python3 main.py start-client-test azamhon`
+
+to get detailed information:  
 `python3 main.py start-client-test --help`
 
 after connnection client it can write some commands and server may serve it after command "**exit**" it closes the server connection
