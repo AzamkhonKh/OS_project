@@ -1,6 +1,7 @@
 import typer
-import client
-from server import Server
+from project.client import Client
+from project.server import Server
+import project.helper as helper
 
 app = typer.Typer()
 
@@ -11,18 +12,18 @@ def hello(name: str, iq: int):
 
 
 @app.command()
-def start_server(host: str = Server.host):
+def start_server():
     Server.start_server()
 
 
 @app.command()
-def start_client_test(username: str, host: str = client.host, port: int = int(client.port)):
-    client.test(username, host, port)
+def start_client_test(username: str):
+    Client.test(username)
 
 
 @app.command()
-def goodbye(name: str, iq: int):
-    print(f"goodbye {name}")
+def test():
+    helper.test_functdd()
 
 
 if __name__ == "__main__":

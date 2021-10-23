@@ -5,6 +5,13 @@ import sys
 
 
 class Protocol:
+    ident_in_message = 3
+    # protocol name : construction of protocol
+    commands = {
+        "MESSAGE": "message",
+        "AUTH": "username",
+    }
+
     @classmethod
     def encode_file(cls, file_path):
         #  first check file exist or not
@@ -27,11 +34,11 @@ class Protocol:
         })
 
     @classmethod
-    def decode_file(cls,json_data):
+    def decode_file(cls, json_data):
         data = json.JSONDecoder(json_data)
         print("file stored in /{username}/name")
         return "OK"
 
 
-prot = Protocol
-prot.encode_file("/home/azamkhon/PycharmProjects/pythonProject/client/nbu-1.jpg")
+# prot = Protocol
+# prot.encode_file("./../storage/client/nbu-1.jpg")
