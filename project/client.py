@@ -4,7 +4,7 @@ from project.messenger import Messenger
 from project.helper import *
 from project.protocol import Protocol
 
-
+# golsd
 class Client:
     host = env_vars['client_host']
     port = env_vars['server_listening_port']
