@@ -46,27 +46,14 @@ class Server:
                     "type": "server"
                 }
                 response = cls.receive_message_from_client(cls.users["temp"])
-                if "username" in response.keys():
-                    username = response["username"]
+                if isinstance(response, bool):
+                    c.close()
+                    continue
                 else:
-                    c.send(f'not found useraname so bye ! \n'.encode())
-                    c.close()
-                    continue
-                if bool(cls.users) and (username in cls.users.keys()):
-                    c.send(f'already have that user closing the connection username {username} ! \n'.encode())
-                    c.close()
-                    continue
-                print('Got connection from', username)
-                cls.users[username] = {
-                    "name": username,
-                    "socket": s,
-                    "addr": addr,
-                    "connection": c,
-                    "type": "server"
-                }
+                    new_user = cls.users[response["name"]] = response
                 # print(cls.users[username])
                 try:
-                    thread.start_new_thread(cls.create_session, (c, cls.users[username]))
+                    thread.start_new_thread(cls.create_session, (c, new_user))
                 except Exception as e:
                     print('Error occured client closed message : ' + str(e))
                     c.close()
@@ -84,7 +71,6 @@ class Server:
     def create_session(cls, c, user_data):
 
         try:
-            cls.send_message_to_client(f'Succes {user_data["name"]} ! \n',c)
             console_line(cls.receive_message_from_client, user_data, "", False)
             if user_data["name"] in cls.users:
                 del cls.users[user_data["name"]]
@@ -110,9 +96,9 @@ class Server:
     @classmethod
     def send_message_to_client(cls, data, conn, command: str = Protocol.commands["MESSAGE"]):
         payload = format_payload(data)
-        print("This is payload")
-        print(payload)
-        print("______________")
+        # print("This is payload")
+        # print(payload)
+        # print("______________")
         message = message_encoder(payload, command, 2)
         msg = message_encoder(message, command)
         conn.sendall(msg)
@@ -123,18 +109,36 @@ class Server:
         msg = conn.recv(1024)
         # data_loaded = pickle.loads(msg.encode(Protocol.message_encoding))
         msg = message_decoder(msg)
-        if msg["message"] == "MESSAGE":
+        if msg["message"] == Protocol.commands["MESSAGE"]:
             message = msg["data"]["message"]
-        elif msg["message"] == "AUTH":
-            message = msg["data"]
+        elif msg["message"] == Protocol.commands["AUTH"]:
+            response = msg["data"]
+            if "username" in response.keys():
+                username = response["username"]
+            else:
+                cls.send_message_to_client(f'not found useraname so bye ! \n', conn)
+                return False
+            if bool(cls.users) and (username in cls.users.keys()):
+                cls.send_message_to_client(
+                    f'already have that user closing the connection username {username} ! \n', conn)
+                return False
+            print('Got connection from', username)
+            cls.send_message_to_client('Succes ' + username + ' ! \n', conn)
+            return {
+                    "name": username,
+                    "socket": user_data["socket"],
+                    "addr": user_data["addr"],
+                    "connection": conn,
+                    "type": "server"
+                }
         else:
             message = msg['data']['message']
 
-        print("received mesage: ")
-        print(message)
-        print("_________________")
+        # print("received mesage: ")
+        # print(message)
+        # print("_________________")
         if "name" in user_data:
-            print(f"received something from {user_data['name']}: " + msg)
+            print(f"received something from {user_data['name']}: " + message)
         if message != env_vars["exit_word"]:
             cls.send_message_to_client("recieved OK", conn)
         else:
@@ -148,4 +152,3 @@ class Server:
             cls.users[user]["connection"].close()
         cls.s.close()
         sys.exit()
-

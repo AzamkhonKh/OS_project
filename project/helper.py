@@ -6,7 +6,7 @@ import json
 from project.protocol import Protocol
 
 env_vars = {
-    "server_listening_port": 2024,
+    "server_listening_port": 2021,
     "server_host": "localhost",
     "client_host": "localhost",
     "exit_word": "exit",
@@ -22,7 +22,9 @@ def console_line(callback, user_data, input_message: str = "input something: ", 
     command = ''
     while command != exit_message:
         if client:
-            command = callback(user_data, input_message)
+            command = callback(input_message)
+            if "message" in command:
+                command = command["message"]
             print(f"response: {command}")
         else:
             command = callback(user_data)
@@ -53,9 +55,12 @@ def message_encoder(payload, command, mode=1):
     return msg
 
 
-def format_payload(data):
+def format_payload(data, command=Protocol.commands["MESSAGE"]):
     if isinstance(data, str):
-        payload = dict({"message": data})
+        if command == Protocol.commands["AUTH"]:
+            payload = dict({"username": data})
+        else:
+            payload = dict({"message": data})
     else:
         payload = data
     return payload
@@ -64,13 +69,15 @@ def format_payload(data):
 def message_decoder(data):
     if isinstance(data, set):
         msg = next(iter(data))
-        print(msg)
+        # print(msg)
+    elif data is None or len(data) < env_vars["HEADERSIZE"]:
+        return ''
     else:
         msg = data
 
     full_msg = b''
-    print(msg)
-    print("new msg len:", msg[:env_vars["HEADERSIZE"]])
+    # print(msg)
+    # print("new msg len:", msg[:env_vars["HEADERSIZE"]])
     msglen = int(msg[:env_vars["HEADERSIZE"]])
 
     # print(f"full message length: {msglen}")
@@ -84,10 +91,10 @@ def message_decoder(data):
         # print(msg)
         for key in msg:
             if key == "data":
-                print(type(msg["data"]))
+                # print(type(msg["data"]))
                 data = (message_decoder(msg["data"]))
                 msg["data"] = data
-        print(msg)
+        # print(msg)
         return msg
 
 
