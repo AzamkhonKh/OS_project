@@ -24,6 +24,7 @@ def start_client_test(username: str):
 @app.command()
 def test():
     helper.test_functdd()
+    print("hello world")
 
 
 if __name__ == "__main__":
