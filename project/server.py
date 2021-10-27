@@ -1,9 +1,8 @@
-import json
 import socket
 import _thread as thread
 import sys
 import signal
-from project.helper import env_vars, console_line
+from project.helper import *
 from project.protocol import Protocol
 
 
@@ -46,14 +45,17 @@ class Server:
                     "connection": c,
                     "type": "server"
                 }
-                username = cls.receive_message_from_client(cls.users["temp"])
+                response = cls.receive_message_from_client(cls.users["temp"])
+                if "username" in response.keys():
+                    username = response["username"]
+                else:
+                    c.send(f'not found useraname so bye ! \n'.encode())
+                    c.close()
+                    continue
                 if bool(cls.users) and (username in cls.users.keys()):
                     c.send(f'already have that user closing the connection username {username} ! \n'.encode())
                     c.close()
                     continue
-                else:
-                    print(f"received not username so closed connection ! recv({username})")
-                    c.close()
                 print('Got connection from', username)
                 cls.users[username] = {
                     "name": username,
@@ -62,11 +64,12 @@ class Server:
                     "connection": c,
                     "type": "server"
                 }
+                # print(cls.users[username])
                 try:
                     thread.start_new_thread(cls.create_session, (c, cls.users[username]))
                 except Exception as e:
                     print('Error occured client closed message : ' + str(e))
-                    s.close()
+                    c.close()
                     cls.start_server()
                     sys.exit()
                 finally:
@@ -81,7 +84,7 @@ class Server:
     def create_session(cls, c, user_data):
 
         try:
-            c.send(f'Succes {user_data["name"]} ! \n'.encode())
+            cls.send_message_to_client(f'Succes {user_data["name"]} ! \n',c)
             console_line(cls.receive_message_from_client, user_data, "", False)
             if user_data["name"] in cls.users:
                 del cls.users[user_data["name"]]
@@ -106,32 +109,32 @@ class Server:
 
     @classmethod
     def send_message_to_client(cls, data, conn, command: str = Protocol.commands["MESSAGE"]):
-        if data is str:
-            payload = {"message": data}
-        else:
-            payload = data
-        msg = {
-            "message": command,
-            "data": {
-                payload
-            }
-        }
-        data_string = json.dumps(msg)
-        conn.send(data_string.encode())
+        payload = format_payload(data)
+        print("This is payload")
+        print(payload)
+        print("______________")
+        message = message_encoder(payload, command, 2)
+        msg = message_encoder(message, command)
+        conn.sendall(msg)
 
     @classmethod
     def receive_message_from_client(cls, user_data):
         conn = user_data["connection"]
-        msg = conn.recv(1024).decode()
-        data_loaded = json.loads(msg)
+        msg = conn.recv(1024)
+        # data_loaded = pickle.loads(msg.encode(Protocol.message_encoding))
+        msg = message_decoder(msg)
         if msg["message"] == "MESSAGE":
             message = msg["data"]["message"]
         elif msg["message"] == "AUTH":
-            message = msg["data"]["username"]
+            message = msg["data"]
         else:
-            message = msg
+            message = msg['data']['message']
 
-        print(f"received something from {user_data['name']}: " + data_loaded)
+        print("received mesage: ")
+        print(message)
+        print("_________________")
+        if "name" in user_data:
+            print(f"received something from {user_data['name']}: " + msg)
         if message != env_vars["exit_word"]:
             cls.send_message_to_client("recieved OK", conn)
         else:
@@ -145,3 +148,4 @@ class Server:
             cls.users[user]["connection"].close()
         cls.s.close()
         sys.exit()
+

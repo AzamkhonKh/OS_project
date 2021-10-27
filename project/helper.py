@@ -1,12 +1,17 @@
+import pickle
+
 import jsonpickle
 import json
 
+from project.protocol import Protocol
+
 env_vars = {
-    "server_listening_port": 2021,
+    "server_listening_port": 2024,
     "server_host": "localhost",
     "client_host": "localhost",
     "exit_word": "exit",
-    "messenger_port": 2022
+    "messenger_port": 2022,
+    "HEADERSIZE": 10
 }
 
 
@@ -18,7 +23,7 @@ def console_line(callback, user_data, input_message: str = "input something: ", 
     while command != exit_message:
         if client:
             command = callback(user_data, input_message)
-            print("response: " + command)
+            print(f"response: {command}")
         else:
             command = callback(user_data)
 
@@ -30,24 +35,63 @@ def console_line(callback, user_data, input_message: str = "input something: ", 
             break
 
 
-def test_functdd():
-    data = "azamkhon"
-    if data is str:
-        payload = {"message": data}
+def message_encoder(payload, command, mode=1):
+    if mode == 1:
+        msg = {
+            "message": command,
+            "data": {
+                payload
+            }
+        }
+    elif mode == 2:
+        msg = payload
+    else:
+        raise Exception("unknown mode for encoding")
+    msg = pickle.dumps(msg)
+
+    msg = bytes(f"{len(msg):<{env_vars['HEADERSIZE']}}", Protocol.message_encoding) + msg
+    return msg
+
+
+def format_payload(data):
+    if isinstance(data, str):
+        payload = dict({"message": data})
     else:
         payload = data
-    msg = {
-        "message": "AUTH",
-        "data": {
-            payload
-        }
-    }
+    return payload
+
+
+def message_decoder(data):
+    if isinstance(data, set):
+        msg = next(iter(data))
+        print(msg)
+    else:
+        msg = data
+
+    full_msg = b''
     print(msg)
+    print("new msg len:", msg[:env_vars["HEADERSIZE"]])
+    msglen = int(msg[:env_vars["HEADERSIZE"]])
 
-    data_string = jsonpickle.encode(msg)
+    # print(f"full message length: {msglen}")
 
-    print(data_string)
-    decoded = jsonpickle.decode(data_string)
-    print(decoded)
+    full_msg += msg
+
+    # print(len(full_msg))
+
+    if len(full_msg) - env_vars["HEADERSIZE"] == msglen:
+        msg = pickle.loads(full_msg[env_vars["HEADERSIZE"]:])
+        # print(msg)
+        for key in msg:
+            if key == "data":
+                print(type(msg["data"]))
+                data = (message_decoder(msg["data"]))
+                msg["data"] = data
+        print(msg)
+        return msg
 
 
+def test_functdd():
+    data = "azamkhon"
+    payload = format_payload(data)
+    print(payload)

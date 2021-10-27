@@ -5,11 +5,12 @@ import sys
 
 
 class Protocol:
+    message_encoding = "utf-8"
     ident_in_message = 3
     # protocol name : construction of protocol
     commands = {
-        "MESSAGE": "message",
-        "AUTH": "username",
+        "MESSAGE": "MESSAGE",
+        "AUTH": "AUTH",
     }
 
     @classmethod

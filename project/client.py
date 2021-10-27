@@ -1,8 +1,7 @@
-import json
 import sys
 import socket
 from project.messenger import Messenger
-from project.helper import env_vars, console_line
+from project.helper import *
 from project.protocol import Protocol
 
 
@@ -14,12 +13,12 @@ class Client:
 
     @classmethod
     def sendMessageClient(cls, user_data, input_message: str = "input something: "):
-        socketUser = user_data["socket"]
+        socketUser = cls.users_data_client["socket"]
         message = input(input_message)
         if len(message) > 0:
             # while message != env_vars["exit_word"]:
-            socketUser.send(message.encode())
-            return socketUser.recv(1024).decode()
+            cls.send_socket_message(message)
+            return cls.receive_message(socketUser)
         else:
             return cls.sendMessageClient(user_data, "input something valid to send to server: ")
 
@@ -32,14 +31,17 @@ class Client:
 
         # connect to the server on local computer
         s.connect((cls.host, cls.port))
-        msg = username
-        cls.send_socket_message(msg, "AUTH")
 
         cls.users_data_client = {
             "name": username,
             "socket": s,
             "type": "client"
         }
+        msg = {
+            "username": username
+        }
+        cls.send_socket_message(msg, "AUTH")
+
         #  there serever should say smth like hey i see you clien
         #  if this not happens smth went wrong
         print(cls.receive_message())
@@ -62,23 +64,23 @@ class Client:
     # }
     @classmethod
     def send_socket_message(cls, data, command: str = Protocol.commands["MESSAGE"]):
-        if data is str:
-            payload = {"message": data}
-        else:
-            payload = data
-        msg = {
-            "message": command,
-            "data": {
-                payload
-            }
-        }
-
-        data_string = json.dumps(msg, indent=Protocol.ident_in_message)
-        cls.users_data_client["socket"].send(data_string.encode())
+        payload = format_payload(data)
+        payload = message_encoder(payload, command, 2)
+        msg = message_encoder(payload, command)
+        # cls.users_data_client["socket"].sendall(bytes(data_string, encoding=Protocol.message_encoding))
+        cls.users_data_client["socket"].sendall(msg)
 
     @classmethod
-    def receive_message(cls):
-        #  this should be json with
-        msg = cls.users_data_client["socket"].recv(1024).decode()
-        data_loaded = json.loads(msg)
-        print(data_loaded)
+    def receive_message(cls, userSocket=None):
+        #  this should be Json with
+        # msg = cls.users_data_client["socket"].recv(1024).decode(Protocol.message_encoding)
+        if userSocket is None:
+            userSocket = cls.users_data_client["socket"]
+        msg = userSocket.recv(1024)
+        # data_loaded = pickle.loads(msg.encode(Protocol.message_encoding))
+        msg = message_decoder(msg)
+        print(msg)
+
+        # if msg != '':
+        #     print("received before decode" + loads)
+        #     print(loads)
