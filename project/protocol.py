@@ -2,6 +2,7 @@ import base64
 import json
 import os
 import sys
+import re
 
 
 class Protocol:
@@ -11,6 +12,7 @@ class Protocol:
     commands = {
         "MESSAGE": "MESSAGE",
         "AUTH": "AUTH",
+        "FILE": "FILE"
     }
 
     @classmethod
@@ -40,6 +42,12 @@ class Protocol:
         print("file stored in /{username}/name")
         return "OK"
 
+    @classmethod
+    def defineCommand(cls, text):
+        if len(text) < 0 and text == " ":
+            return False
+        wordList = re.sub("[^\w]", " ", text).split()
+        if wordList[0] in cls.commands:
+            return cls.commands[wordList[0]]
 
-# prot = Protocol
-# prot.encode_file("./../storage/client/nbu-1.jpg")
+        return cls.commands["MESSAGE"]

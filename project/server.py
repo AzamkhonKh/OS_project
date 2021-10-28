@@ -4,6 +4,7 @@ import sys
 import signal
 from project.helper import *
 from project.protocol import Protocol
+from pathlib import Path
 
 
 class Server:
@@ -131,6 +132,13 @@ class Server:
                     "connection": conn,
                     "type": "server"
                 }
+        elif msg["message"] == Protocol.commands["FILE"]:
+            print(msg)
+            dir_name = os.getcwd()+"/storage/server/" + user_data['name']
+            message = "file should be crate " + dir_name
+            print(message)
+            # Protocol.decode_file()
+            Path(dir_name).mkdir(parents=True, exist_ok=True)
         else:
             message = msg['data']['message']
 

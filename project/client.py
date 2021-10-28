@@ -4,6 +4,7 @@ from project.messenger import Messenger
 from project.helper import *
 from project.protocol import Protocol
 
+
 # golsd
 class Client:
     host = env_vars['client_host']
@@ -60,9 +61,16 @@ class Client:
     # }
     @classmethod
     def send_socket_message(cls, data, command: str = Protocol.commands["MESSAGE"]):
+        if isinstance(data, str) and command == Protocol.commands["MESSAGE"]:
+            cmd = Protocol.defineCommand(data)
+            if not cmd:
+                pass
+            command = cmd
+            # print(command)
         payload = format_payload(data, command)
         payload = message_encoder(payload, command, 2)
         msg = message_encoder(payload, command)
+        # print(msg)
         # cls.users_data_client["socket"].sendall(bytes(data_string, encoding=Protocol.message_encoding))
         cls.users_data_client["socket"].sendall(msg)
 
@@ -75,7 +83,7 @@ class Client:
         msg = userSocket.recv(1024)
         # data_loaded = pickle.loads(msg.encode(Protocol.message_encoding))
         msg = message_decoder(msg)
-        # print(msg)
+        print(msg)
         if command == Protocol.commands["MESSAGE"]:
             return msg['data']['message']
         else:
