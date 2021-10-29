@@ -3,6 +3,9 @@ from project.protocol import Protocol
 import os
 import glob
 import re
+import base64
+from pathlib import Path
+
 
 env_vars = {
     "server_listening_port": 2021,
@@ -108,17 +111,16 @@ def message_decoder(data):
         # print("___________")
         if isinstance(msg, dict):
             for key, value in msg.items():
-                if isinstance(value, set) or isinstance(value, bytes):
-                    # print("___________")
-                    # print(key + "decoding")
-                    # print("___________")
+                if (isinstance(value, set) or isinstance(value, bytes)) and key != "base64_encoded":
+                    print("___________")
+                    print(key + "decoding")
+                    print("___________")
                     data = (message_decoder(value))
                     msg[key] = data
                 # if key == "data":
                 #     # print(type(msg["data"]))
                 #     data = (message_decoder(msg["data"]))
                 #     msg["data"] = data
-        # print(msg)
         return msg
 
 
@@ -145,8 +147,14 @@ def test_functdd():
         txtfiles.append(file)
     print(txtfiles)
     encoded_file = protocol.encode_file(txtfiles[0])
-    print(encoded_file)
-    decoded_file = protocol.decode_file(encoded_file)
+    # print(encoded_file)
+    decoded_file = message_decoder(encoded_file)
+    print(decoded_file)
+    data = decoded_file['data']
+    store_path = path_to_storage() + "/server/jumobot/"
+    Path(store_path).mkdir(parents=True, exist_ok=True)
+    with open(store_path + data['file_name'] + data['ext'], "wb") as fh:
+        fh.write(base64.decodebytes(data['base64_encoded']))
 
 
 def path_to_storage():

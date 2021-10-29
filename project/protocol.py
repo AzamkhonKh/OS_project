@@ -22,6 +22,7 @@ class Protocol:
             contents = f.read()
         file_name = os.path.basename(file_path)
         file_ext = os.path.splitext(file_name)[1]
+        name_without_ext = os.path.splitext(file_name)[0]
         size = os.path.getsize(file_path)
         # print(file_name)
         # print(file_ext)
@@ -31,8 +32,10 @@ class Protocol:
         to_encode = dict({
             "message": "encoded file ready to store in server",
             "action": "storeFile",
+            "size": size,
+            "file_name": name_without_ext,
             "ext": file_ext,
-            "data": encoded
+            "base64_encoded": encoded
         })
         data = helper.message_encoder(to_encode, cls.commands["FILE"], 2)
         result = helper.message_encoder(data, cls.commands["FILE"])
