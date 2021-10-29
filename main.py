@@ -1,7 +1,7 @@
 import typer
 from project.client import Client
 from project.server import Server
-import project.helper as helper
+from project.helper import *
 
 app = typer.Typer()
 
@@ -23,7 +23,7 @@ def start_client_test(username: str):
 
 @app.command()
 def test():
-    helper.test_functdd()
+    test_functdd()
 
 
 if __name__ == "__main__":

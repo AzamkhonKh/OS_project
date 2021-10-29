@@ -123,29 +123,31 @@ def message_decoder(data):
 
 
 def test_functdd():
-    my_dict = {'message': 'FILE',
-               'data': {'message': ' this is an file payload', 'filename': 'smth.as/asdas', 'action': 'write',
-                        'file_data': b'53        \x80\x04\x95*\x00\x00\x00\x00\x00\x00\x00}\x94(\x8c\x04size\x94K{\x8c\x03ext\x94\x8c\x03jpg\x94\x8c\x05bytes\x94\x8c\x05adfdf\x94u.'}}
-    print(type(my_dict['data']['file_data']))
-    for key, val in my_dict.items():
-        if isinstance(val, dict):
-            for key1, val1 in val.items():
-                if isinstance(val1,bytes):
-                    data = message_decoder(val1)
-                    val[key1] = data
-        elif isinstance(val, set):
-            data = (message_decoder(val))
-            my_dict[key] = data
-        print(val)
-        print(type(val))
-    print(my_dict)
-    # mystr = 'This is a string, with words!'
-    # wordList = re.sub("[^\w]", " ", mystr).split()
-    # print(wordList[0])
-    # dir_name = os.getcwd()
-    # print(dir_name)
-    #
-    # txtfiles = []
-    # for file in glob.glob(dir_name + "/*.*"):
-    #     txtfiles.append(file)
-    # print(txtfiles)
+    # my_dict = {'message': 'FILE',
+    #            'data': {'message': ' this is an file payload', 'filename': 'smth.as/asdas', 'action': 'write',
+    #                     'file_data': b'53        \x80\x04\x95*\x00\x00\x00\x00\x00\x00\x00}\x94(\x8c\x04size\x94K{\x8c\x03ext\x94\x8c\x03jpg\x94\x8c\x05bytes\x94\x8c\x05adfdf\x94u.'}}
+    # print(type(my_dict['data']['file_data']))
+    # for key, val in my_dict.items():
+    #     if isinstance(val, dict):
+    #         for key1, val1 in val.items():
+    #             if isinstance(val1, bytes):
+    #                 data = message_decoder(val1)
+    #                 val[key1] = data
+    #     elif isinstance(val, set):
+    #         data = (message_decoder(val))
+    #         my_dict[key] = data
+    #     print(val)
+    #     print(type(val))
+    # print(my_dict)
+    protocol = Protocol()
+    txtfiles = []
+    for file in glob.glob(path_to_storage() + "/client/*.*"):
+        txtfiles.append(file)
+    print(txtfiles)
+    encoded_file = protocol.encode_file(txtfiles[0])
+    print(encoded_file)
+    decoded_file = protocol.decode_file(encoded_file)
+
+
+def path_to_storage():
+    return os.getcwd() + '/storage'
