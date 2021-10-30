@@ -96,49 +96,48 @@ class Server:
 
     @classmethod
     def send_message_to_client(cls, data, conn, command: str = Protocol.commands["MESSAGE"]):
-        payload = format_payload(data)
+        payload = format_payload(data, command)
+
         # print("This is payload")
         # print(payload)
+        # print(command)
         # print("______________")
         message = message_encoder(payload, command, 2)
         msg = message_encoder(message, command)
+
+        # print("This is msg")
+        # print(msg)
+        # print(command)
+        # print("______________")
         conn.sendall(msg)
 
     @classmethod
     def receive_message_from_client(cls, user_data):
         conn = user_data["connection"]
+        # msg = cls.recvallMine(conn)
         msg = conn.recv(1024)
         # data_loaded = pickle.loads(msg.encode(Protocol.message_encoding))
-        msg = message_decoder(msg)
-        if msg["message"] == Protocol.commands["MESSAGE"]:
+        msg = message_decoder(msg, conn)
+        if msg["command"] == Protocol.commands["MESSAGE"]:
             message = msg["data"]["message"]
-        elif msg["message"] == Protocol.commands["AUTH"]:
-            response = msg["data"]
-            if "username" in response.keys():
-                username = response["username"]
-            else:
-                cls.send_message_to_client(f'not found useraname so bye ! \n', conn)
-                return False
-            if bool(cls.users) and (username in cls.users.keys()):
-                cls.send_message_to_client(
-                    f'already have that user closing the connection username {username} ! \n', conn)
-                return False
-            print('Got connection from', username)
-            cls.send_message_to_client('Succes ' + username + ' ! \n', conn)
-            return {
-                    "name": username,
-                    "socket": user_data["socket"],
-                    "addr": user_data["addr"],
-                    "connection": conn,
-                    "type": "server"
-                }
-        elif msg["message"] == Protocol.commands["FILE"]:
-            print(msg)
-            dir_name = os.getcwd()+"/storage/server/" + user_data['name']
-            message = "file should be crate " + dir_name
-            print(message)
-            # Protocol.decode_file()
-            Path(dir_name).mkdir(parents=True, exist_ok=True)
+        elif msg["command"] == Protocol.commands["AUTH"]:
+            return cls.hanlde_auth(msg, user_data)
+        elif msg["command"] == Protocol.commands["FILE"]:
+            message = cls.handle_file(msg, user_data)
+        elif msg["command"] == Protocol.commands["lf"]:
+            return cls.handle_lf(user_data)
+        elif msg["command"] == Protocol.commands["lu"]:
+            return cls.handle_lu(user_data)
+        elif msg["command"] == Protocol.commands["write"]:
+            return cls.handle_write(msg, user_data)
+        elif msg["command"] == Protocol.commands["overwrite"]:
+            return cls.handle_overwrite(msg, user_data)
+        elif msg["command"] == Protocol.commands["read"] or msg["command"] == Protocol.commands["overread"]:
+            return cls.handle_read(msg, user_data)
+        elif msg["command"] == Protocol.commands["append"]:
+            return cls.handle_append(msg, user_data)
+        elif msg["command"] == Protocol.commands["appendfile"]:
+            return cls.handle_append(msg, user_data)
         else:
             message = msg['data']['message']
 
@@ -160,3 +159,156 @@ class Server:
             cls.users[user]["connection"].close()
         cls.s.close()
         sys.exit()
+
+    @classmethod
+    def hanlde_auth(cls, msg, user_data):
+        conn = user_data["connection"]
+        response = msg["data"]
+        if "username" in response.keys():
+            username = response["username"]
+        else:
+            cls.send_message_to_client(f'not found useraname so bye ! \n', conn)
+            return False
+        if bool(cls.users) and (username in cls.users.keys()):
+            cls.send_message_to_client(
+                f'already have that user closing the connection username {username} ! \n', conn)
+            return False
+        print('Got connection from', username)
+        cls.send_message_to_client('Succes ' + username + ' ! \n', conn)
+        return {
+            "name": username,
+            "socket": user_data["socket"],
+            "addr": user_data["addr"],
+            "connection": conn,
+            "type": "server"
+        }
+
+    @classmethod
+    def handle_file(cls, msg, user_data):
+        decoded_file = msg
+        # print(msg)
+        dir_name = path_to_storage() + "/server/" + user_data['name']
+        Path(dir_name).mkdir(parents=True, exist_ok=True)
+        message = "file should be crated " + dir_name
+        # print(message)
+        # Protocol.decode_file()
+        print(decoded_file)
+        data = decoded_file['data']
+        full_path = dir_name + data['file_name'] + data['ext']
+        if "action" in data:
+            if data["action"] == "storeFile":
+                cls.store_file(full_path, data)
+            # if data["action"] == "open":
+            #     cls.send_file(full_path, data)
+
+        else:
+            cls.store_file(full_path, data)
+        return message
+
+    @classmethod
+    def handle_lf(cls, user_data):
+        txtfiles = []
+        result = ''
+        index = 1
+        conn = user_data["connection"]
+        full_path = path_to_storage() + "/server/" + user_data['name']
+        Path(full_path).mkdir(parents=True, exist_ok=True)
+        files_available = False
+        for file in glob.glob(full_path + "/*.*"):
+            files_available = True
+            result += '\n'
+            result += str(index) + " - " + os.path.basename(file)
+            result += '\n'
+            index += 1
+
+        if not files_available:
+            result = "folder is empty add some file viw write command " + full_path
+        cls.send_message_to_client(result, conn)
+        return result
+
+    @classmethod
+    def store_file(cls, full_path, data):
+        if os.path.isdir(full_path):
+            full_path += data['file_name'] + data['ext']
+
+        return Protocol.store_file(full_path, data)
+
+    @classmethod
+    def handle_lu(cls, user_data):
+        conn = user_data["connection"]
+        result = ''
+        index = 1
+        for username in cls.users.keys():
+            if username == "temp":
+                continue
+            result += str(index) + " - " + username + '\n'
+            index += 1
+
+        if result == '':
+            result = "there is no user rather than you ! )"
+        cls.send_message_to_client(result, conn)
+        return result
+
+    @classmethod
+    def handle_write(cls, msg, user_data):
+        decoded_file = msg
+        conn = user_data["connection"]
+        dir_name = path_to_storage() + "/server/" + user_data['name']
+        Path(dir_name).mkdir(parents=True, exist_ok=True)
+        data = decoded_file['data']
+        # print("________ data before store file")
+        # print(data)
+        # print("________@@@@@@@")
+        full_path = dir_name + "/" + data['file_name'] + data['ext']
+        message = cls.store_file(full_path, data)
+        cls.send_message_to_client(message, conn)
+        return message
+
+    @classmethod
+    def handle_overwrite(cls, msg, user_data):
+        data = msg['data']
+        dir_name = path_to_storage() + "/server/" + user_data['name']
+        full_path = dir_name + "/" + data['file_name'] + data['ext']
+        if os.path.isfile(full_path):
+            os.remove(full_path)
+        cls.handle_write(msg, user_data)
+
+    @classmethod
+    def handle_read(cls, msg, user_data):
+        # there are handling read and overread
+        # get filen_name
+        print("_____________ msg read handle")
+        print(msg)
+        print("_____________++++++++++")
+        command = Protocol.commands["MESSAGE"]
+        conn = user_data["connection"]
+        file_name = msg['data']['file_name']
+        # check does file exist
+        dir_name = path_to_storage() + "/server/" + user_data['name']
+        full_path = dir_name + "/" + file_name
+        if os.path.isfile(full_path):
+            # if msg['command'] == Protocol.commands["overread"]:
+            command = msg['command']
+            message = Protocol.encode_file(full_path)
+        else:
+            message = "file not found in server " + full_path
+        cls.send_message_to_client(message, conn, command)
+        return message
+
+    @classmethod
+    def handle_append(cls, msg, user_data):
+        conn = user_data["connection"]
+        file_name = msg['data']['file_name']
+        dir_name = path_to_storage() + "/server/" + user_data['name']
+        full_path = dir_name + "/" + file_name
+        # print(full_path)
+        if os.path.isfile(full_path):
+            append_string = msg['data']['append']
+            file_object = open(full_path, 'a')
+            file_object.write(append_string)
+            file_object.close()
+            message = "success ! appended string to file"
+        else:
+            message = "file not exist, pls use lf to check spelling ( " + full_path + " )"
+        cls.send_message_to_client(message, conn)
+        return message

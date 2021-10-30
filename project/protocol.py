@@ -8,11 +8,22 @@ import re
 class Protocol:
     message_encoding = "utf-8"
     ident_in_message = 3
-    # protocol name : construction of protocol
+    # protocol name : construction of protocol // in ideal case
     commands = {
         "MESSAGE": "MESSAGE",
         "AUTH": "AUTH",
-        "FILE": "FILE"
+        "LOCAL_LS": "LOCAL_LS",
+        "FILE": "FILE",
+        "lu": "lu",
+        "lf": "lf",
+        "read": "read",
+        "overread": "overread",
+        "write": "write",
+        "overwrite": "overwrite",
+
+        "append": "append",
+        "appendfile": "appendfile",
+        "send": "send",
     }
 
     @classmethod
@@ -37,15 +48,20 @@ class Protocol:
             "ext": file_ext,
             "base64_encoded": encoded
         })
-        data = helper.message_encoder(to_encode, cls.commands["FILE"], 2)
-        result = helper.message_encoder(data, cls.commands["FILE"])
-        return result
+        # data = helper.message_encoder(to_encode, cls.commands["FILE"], 2)
+        # result = helper.message_encoder(data, cls.commands["FILE"])
+        return to_encode
 
     @classmethod
-    def decode_file(cls, json_data):
-        data = json.JSONDecoder(json_data)
-        print("file stored in /{username}/name")
-        return "OK"
+    def store_file(cls, full_path, data):
+        if os.path.isdir(full_path):
+            return "given directory. not file location with name"
+        if os.path.isfile(full_path):
+            return "file with this name already exist"
+
+        with open(full_path, "wb") as fh:
+            fh.write(base64.decodebytes(data['base64_encoded']))
+        return "file should be created " + full_path
 
     @classmethod
     def defineCommand(cls, text):
