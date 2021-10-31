@@ -17,8 +17,8 @@ def start_server():
 
 
 @app.command()
-def start_client_test(username: str):
-    Client.test(username)
+def start_client_test(username: str, ip="localhost"):
+    Client.test(username, ip)
 
 
 @app.command()

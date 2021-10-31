@@ -1,3 +1,4 @@
+import signal
 import sys
 import socket
 from time import sleep
@@ -11,7 +12,7 @@ import os
 
 # golsd
 class Client:
-    host = Protocol.env_vars['client_host']
+    host = None
     port = Protocol.env_vars['server_listening_port']
     msg = Messenger
     receier_socket = None
@@ -31,8 +32,13 @@ class Client:
         return cls.sendMessageClient("input something valid to send to server: ")
 
     @classmethod
-    def test(cls, username: str):
+    def test(cls, username: str, ip=None):
+        if ip is None:
+            cls.host = Protocol.env_vars['client_host']
+        else:
+            cls.host = ip
         # Create a socket object
+        signal.signal(signal.SIGINT, cls.ctrl_handler)
         s = socket.socket()
 
         # Define the port on which you want to connect
@@ -45,8 +51,8 @@ class Client:
             "name": username,
             "socket": s,
             "messanger": {
-              "socket": cls.receier_socket,
-              "addr_ip": cls.msg.IPAddr
+                "socket": cls.receier_socket,
+                "addr_ip": cls.msg.IPAddr
             },
             "type": "client"
         }
@@ -85,6 +91,8 @@ class Client:
             return cls.local_ls()
         elif command == Protocol.commands["RESTART_RES"]:
             return cls.restart_res()
+        elif command == Protocol.commands["quit"]:
+            return cls.quit_handle()
         elif command == Protocol.commands["write"] or command == Protocol.commands["overwrite"]:
             validation = cls.handle_sent_write(data)
             if validation == '':
@@ -109,6 +117,17 @@ class Client:
         # cls.users_data_client["socket"].sendall(bytes(data_string, encoding=Protocol.message_encoding))
         cls.users_data_client["socket"].sendall(msg)
         return cls.receive_message(command)
+
+    @classmethod
+    def ctrl_handler(cls, signum, frame):
+        print("in user ctrl handler")
+        cls.quit_handle()
+
+    @classmethod
+    def quit_handle(cls):
+        cls.receier_socket.close()
+        cls.users_data_client["socket"].close()
+        sys.exit()
 
     @classmethod
     def receive_message(cls, command: str = Protocol.commands["MESSAGE"], userSocket=None):

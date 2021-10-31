@@ -9,7 +9,7 @@ class Protocol:
         "server_listening_port": 2021,
         "server_host": "localhost",
         "client_host": "localhost",
-        "exit_word": "exit",
+        "exit_word": "disconnect",
         "messenger_port": 2022,
         "HEADERSIZE": 10
     }
@@ -32,6 +32,7 @@ class Protocol:
         "appendfile": "appendfile",
 
         "message": "message",
+        "quit": "quit",
         "send": "send",
     }
 
