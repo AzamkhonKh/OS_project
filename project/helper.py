@@ -56,15 +56,15 @@ def test_functdd():
     from project.messenger import Messenger
 
     cls = Messenger
-    cls.recieve_message()
+    # cls.recieve_message()
     # connect to the server on local computer
     # users_data[receiver]["addr"][0]
     s = socket.socket()
-    s.connect(("127.0.0.1", 2022))
+    s.connect(("127.0.1.1", 2022))
     from project.protocol import Protocol
-
-    resp = cls.send_socket_message(mess, Protocol.commands["send"], s)
-    print(resp)
+    resp = s.sendall("hola".encode())
+    # resp = cls.send_socket_message(mess, Protocol.commands["send"], s)
+    print(s.recv(1024))
     s.close()
 
 

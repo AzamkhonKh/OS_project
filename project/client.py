@@ -1,5 +1,7 @@
 import sys
 import socket
+from time import sleep
+
 from project.messenger import Messenger
 from project.protocol import Protocol
 import _thread as thread
@@ -38,12 +40,23 @@ class Client:
         # connect to the server on local computer
         s.connect((cls.host, cls.port))
 
+        cls.receier_socket = cls.msg.start_receiving(cls)
         cls.users_data_client = {
             "name": username,
             "socket": s,
+            "messanger": {
+              "socket": cls.receier_socket,
+              "addr_ip": cls.msg.IPAddr
+            },
             "type": "client"
         }
-        print(cls.send_socket_message(username, Protocol.commands["AUTH"]))
+        auth_data = dict({
+            "username": username,
+            "messanger": {
+                "addr_ip": cls.msg.IPAddr
+            },
+        })
+        print(cls.send_socket_message(auth_data, Protocol.commands["AUTH"]))
 
         #  there serever should say smth like hey i see you clien
         #  if this not happens smth went wrong
@@ -52,11 +65,10 @@ class Client:
         # receive data from the server and decoding to get the string.
         # close the connection
 
-        receiver_socket = cls.msg.start_receiving(cls)
         # print("oute form receiving 2")
 
         Protocol.console_line(cls.sendMessageClient, cls.users_data_client, "send something to server: ")
-        receiver_socket.close()
+        cls.receier_socket.close()
         sys.exit()
 
     # received and sending as well message struct
@@ -71,6 +83,8 @@ class Client:
     def send_socket_message(cls, data, command: str = Protocol.commands["MESSAGE"]):
         if command == Protocol.commands["LOCAL_LS"]:
             return cls.local_ls()
+        elif command == Protocol.commands["RESTART_RES"]:
+            return cls.restart_res()
         elif command == Protocol.commands["write"] or command == Protocol.commands["overwrite"]:
             validation = cls.handle_sent_write(data)
             if validation == '':
@@ -146,6 +160,14 @@ class Client:
             index += 1
 
         return result
+
+    @classmethod
+    def restart_res(cls):
+        cls.receier_socket.close()
+        print("scoket closed !")
+        sleep(20)
+        cls.receiver_socket = cls.msg.start_receiving(cls)
+        return "socket opened again ! "
 
     @classmethod
     def store_file(cls, full_path, data):

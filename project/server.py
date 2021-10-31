@@ -19,7 +19,7 @@ class Server:
 
     # username : dict(data like )
     @classmethod
-    def create_socket(cls, with_print = True):
+    def create_socket(cls, with_print=True):
 
         cls.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         if with_print:
@@ -170,16 +170,19 @@ class Server:
     def hanlde_auth(cls, msg, user_data):
         conn = user_data["connection"]
         response = msg["data"]
-
-        print("_____________ msg auth handle")
-        print(msg)
-        print("_____________++++++++++")
+        messager_ip = ''
+        # print("_____________ msg auth handle")
+        # print(msg)
+        # print("_____________++++++++++")
         conn = user_data["connection"]
         if "username" in response.keys():
             username = response["username"]
+            if "messanger" in response:
+                messager_ip = response["messanger"]["addr_ip"]
         else:
             cls.send_message_to_client(f'not found useraname so bye ! \n', conn)
             return False
+
         if bool(cls.users) and (username in cls.users.keys()):
             cls.send_message_to_client(
                 f'already have that user closing the connection username {username} ! \n', conn)
@@ -191,6 +194,9 @@ class Server:
             "socket": user_data["socket"],
             "addr": user_data["addr"],
             "connection": conn,
+            "messanger": {
+                "addr_ip": messager_ip
+            },
             "type": "server"
         }
 
@@ -288,9 +294,9 @@ class Server:
     def handle_read(cls, msg, user_data):
         # there are handling read and overread
         # get filen_name
-        print("_____________ msg read handle")
-        print(msg)
-        print("_____________++++++++++")
+        # print("_____________ msg read handle")
+        # print(msg)
+        # print("_____________++++++++++")
         command = Protocol.commands["MESSAGE"]
         conn = user_data["connection"]
         file_name = msg['data']['file_name']

@@ -17,10 +17,10 @@ class Messenger:
         server = Server
         # print(cls.IPAddr)
 
-        server.host = cls.hostname
+        server.host = cls.IPAddr
         server.port = cls.port
         s = server.create_socket(False)
-        thread.start_new_thread(cls.recieve_message, (client,s))
+        thread.start_new_thread(cls.recieve_message, (s,))
         return s
         # print("oute form receiving")
 
@@ -30,10 +30,13 @@ class Messenger:
 
             while True:
                 # Establish connection with client.
+                # print(s)
                 c, addr = s.accept()
+                # msg = c.recv(1024)
+                # print(msg)
                 print(cls.receive_message_from_client(c))
         except Exception as e:
-            print("Messager error occured: " )
+            print("Messager error occured: ")
             print(e)
 
     @classmethod
@@ -46,8 +49,13 @@ class Messenger:
                 # Define the port on which you want to connect
 
                 # connect to the server on local computer
-                s.connect((users_data[receiver]["addr"][0], cls.port))
-                resp = cls.send_socket_message(message, Protocol.commands["send"], s)
+                data = dict({
+                    "message": message,
+                    "from": sender,
+                    "to": receiver
+                })
+                s.connect((users_data[receiver]["messanger"]["addr_ip"], cls.port))
+                resp = cls.send_socket_message(data, Protocol.commands["send"], s)
                 s.close()
             else:
                 resp = "receiver not found"
@@ -57,21 +65,31 @@ class Messenger:
 
     @classmethod
     def receive_message_from_client(cls, conn):
-        # msg = cls.recvallMine(conn)
         msg = conn.recv(1024)
-        print("messenger receiver some message")
-        print(msg)
-        print("+++++++++++++++++++++++++")
         # data_loaded = pickle.loads(msg.encode(Protocol.message_encoding))
         msg = Protocol.message_decoder(msg, conn)
-        if msg["command"] == Protocol.commands["send"]:
-            message = msg["data"]
+        message = ''
+        command = msg["command"]
+        # print("messenger receiver some message")
+        # print(msg)
+        # print("+++++++++++++++++++++++++")
+        if command == Protocol.commands["send"]:
+            data = msg["data"]
+            message += "\n______________\n"
+            message += 'message -- "' + data["message"] + '" \n'
+            message += 'from -- "' + data["from"] + '" \n'
+            message += 'to --  "' + data["to"] + '" \n'
+            message += "\n______________\n"
+
+        elif command == Protocol.commands["MESSAGE"]:
+            return msg['data']['message']
         else:
-            print("messenger receiver not send  command")
-            print(msg)
-            print("+++++++++++++++++++++++++")
+            # print("messenger receiver not send  command")
+            # print(msg)
+            # print("+++++++++++++++++++++++++")
             message = "messenger receiver not send  command"
 
+        cls.send_message_once("recieved OK", Protocol.commands["MESSAGE"], conn)
         return message
 
     @classmethod
@@ -86,3 +104,15 @@ class Messenger:
         # cls.users_data_client["socket"].sendall(bytes(data_string, encoding=Protocol.message_encoding))
         socket.sendall(msg)
         return cls.receive_message_from_client(socket)
+
+    @classmethod
+    def send_message_once(cls, data, command: str, socket):
+        payload = Protocol.format_payload(data, command)
+        payload = Protocol.message_encoder(payload, command, 2)
+        msg = Protocol.message_encoder(payload, command)
+        # print("_____________client payload")
+        # print(payload)
+        # print("________________")
+        # print(msg)
+        # cls.users_data_client["socket"].sendall(bytes(data_string, encoding=Protocol.message_encoding))
+        socket.sendall(msg)
