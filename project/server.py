@@ -4,7 +4,9 @@ import socket
 import _thread as thread
 import sys
 import signal
+
 from project.protocol import Protocol
+from project.messenger import *
 from pathlib import Path
 
 
@@ -17,17 +19,20 @@ class Server:
 
     # username : dict(data like )
     @classmethod
-    def create_socket(cls):
+    def create_socket(cls, with_print = True):
 
         cls.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        print("Socket successfully created")
+        if with_print:
+            print("Socket successfully created")
 
         cls.s.bind((cls.host, cls.port))
-        print("host is %s" % cls.host)
-        print("socket binded to %s" % cls.port)
+        if with_print:
+            print("host is %s" % cls.host)
+            print("socket binded to %s" % cls.port)
 
         cls.s.listen(5)
-        print("socket is listening")
+        if with_print:
+            print("socket is listening")
         return cls.s
 
     @classmethod
@@ -137,6 +142,8 @@ class Server:
             return cls.handle_append(msg, user_data)
         elif msg["command"] == Protocol.commands["appendfile"]:
             return cls.handle_append(msg, user_data)
+        elif msg["command"] == Protocol.commands["send"]:
+            return cls.handle_send(msg, user_data)
         else:
             message = msg['data']['message']
 
@@ -163,6 +170,11 @@ class Server:
     def hanlde_auth(cls, msg, user_data):
         conn = user_data["connection"]
         response = msg["data"]
+
+        print("_____________ msg auth handle")
+        print(msg)
+        print("_____________++++++++++")
+        conn = user_data["connection"]
         if "username" in response.keys():
             username = response["username"]
         else:
@@ -311,3 +323,18 @@ class Server:
             message = "file not exist, pls use lf to check spelling ( " + full_path + " )"
         cls.send_message_to_client(message, conn)
         return message
+
+    @classmethod
+    def handle_send(cls, msg, user_data):
+
+        # print("_____________ msg send handle")
+        # print(msg)
+        # print("_____________++++++++++")
+        conn = user_data["connection"]
+        data = msg['data']
+        receiver = data['receiver']
+        message = data['message']
+        from project.messenger import Messenger
+        result = Messenger.send_message(user_data["name"], receiver, cls.users, message)
+        cls.send_message_to_client(result, conn)
+        return result

@@ -6,7 +6,7 @@ import re
 
 class Protocol:
     env_vars = {
-        "server_listening_port": 2024,
+        "server_listening_port": 2021,
         "server_host": "localhost",
         "client_host": "localhost",
         "exit_word": "exit",
@@ -20,6 +20,7 @@ class Protocol:
         "MESSAGE": "MESSAGE",
         "AUTH": "AUTH",
         "LOCAL_LS": "LOCAL_LS",
+        "RESTART_RES": "RESTART_RES",
         "FILE": "FILE",
         "lu": "lu",
         "lf": "lf",
@@ -30,6 +31,7 @@ class Protocol:
         "append": "append",
         "appendfile": "appendfile",
 
+        "message": "message",
         "send": "send",
     }
 
@@ -159,6 +161,13 @@ class Protocol:
                     "message": "return list of users in server",
                     "file_name": splitted[2],
                     "append": splitted[1],
+                    "action": command,
+                })
+            elif command == Protocol.commands["send"]:
+                splitted = format_send_message(data)
+                payload = dict({
+                    "message": splitted["message"],
+                    "receiver": splitted["receiver"],
                     "action": command,
                 })
             elif command == Protocol.commands["appendfile"]:

@@ -1,8 +1,8 @@
 import pickle
 import os
 import re
+import socket
 from pathlib import Path
-
 
 
 
@@ -38,17 +38,34 @@ def test_functdd():
     # with open(store_path + data['file_name'] + data['ext'], "wb") as fh:
     #     fh.write(base64.decodebytes(data['base64_encoded']))
 
-    s = 'append "\n seniorita asdf as fs" hola.txt'
+    mess = 'send nodir "hola seniora\n sdaf \n"'
+    # splitter = s.split()
+    # print(splitter)
+    # s = re.split('\"*\"', s)
+    # print(s)
+    # key = 0
+    # for word in s:
+    #     if key != 1:
+    #         s[key] = word.replace(" ", "")
+    #     # print(s.index(s[key]))
+    #     key += 1
+    # print(s)
 
-    s = re.split('"', s)
-    print(s)
-    key = 0
-    for word in s:
-        if key != 1:
-            s[key] = word.replace(" ", "")
-        print(s.index(s[key]))
-        key += 1
-    print(s)
+
+    # Define the port on which you want to connect
+    from project.messenger import Messenger
+
+    cls = Messenger
+    cls.recieve_message()
+    # connect to the server on local computer
+    # users_data[receiver]["addr"][0]
+    s = socket.socket()
+    s.connect(("127.0.0.1", 2022))
+    from project.protocol import Protocol
+
+    resp = cls.send_socket_message(mess, Protocol.commands["send"], s)
+    print(resp)
+    s.close()
 
 
 def path_to_storage():
@@ -63,5 +80,21 @@ def format_append_message(command):
         if key != 1:
             s[key] = word.replace(" ", "")
         key += 1
-    # print(s)
+    print(s)
     return s
+
+
+def format_send_message(command):
+    s = command
+    receiver = command.split()[1]
+    s = re.split('"', s)
+    key = 0
+    for word in s:
+        if key != 1:
+            s[key] = word.replace(" ", "")
+        key += 1
+    # print(s)
+    return dict({
+        "receiver": receiver,
+        "message": s[1]
+    })

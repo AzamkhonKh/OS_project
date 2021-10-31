@@ -2,6 +2,7 @@ import sys
 import socket
 from project.messenger import Messenger
 from project.protocol import Protocol
+import _thread as thread
 import glob
 import os
 
@@ -11,11 +12,14 @@ class Client:
     host = Protocol.env_vars['client_host']
     port = Protocol.env_vars['server_listening_port']
     msg = Messenger
+    receier_socket = None
     users_data_client = dict()
 
     @classmethod
     def sendMessageClient(cls, input_message: str = "input something: "):
         message = input(input_message)
+        if len(message) < 1:
+            return cls.sendMessageClient("input something valid to send to server: ")
         cmd = Protocol.defineCommand(message)
         if not cmd:
             pass
@@ -39,7 +43,7 @@ class Client:
             "socket": s,
             "type": "client"
         }
-        cls.send_socket_message(username, Protocol.commands["AUTH"])
+        print(cls.send_socket_message(username, Protocol.commands["AUTH"]))
 
         #  there serever should say smth like hey i see you clien
         #  if this not happens smth went wrong
@@ -48,9 +52,11 @@ class Client:
         # receive data from the server and decoding to get the string.
         # close the connection
 
-        # cls.msg.recieve_message(cls)
+        receiver_socket = cls.msg.start_receiving(cls)
+        # print("oute form receiving 2")
 
         Protocol.console_line(cls.sendMessageClient, cls.users_data_client, "send something to server: ")
+        receiver_socket.close()
         sys.exit()
 
     # received and sending as well message struct
@@ -170,15 +176,14 @@ class Client:
 
     @classmethod
     def handle_read(cls, response):
-        print("+++++++++++++++ response")
-        print(response)
-        print(type(response))
-        print("+++++++++++++++_______________")
+        # print("+++++++++++++++ response")
+        # print(response)
+        # print(type(response))
+        # print("+++++++++++++++_______________")
         data = response['data']
         path = Protocol.path_to_storage() + "/client/"
         full_path = path + "/" + data['file_name'] + data['ext']
         return cls.store_file(full_path, data)
-
 
     @classmethod
     def handle_overread(cls, response):
