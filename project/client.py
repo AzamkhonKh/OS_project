@@ -1,14 +1,15 @@
 import sys
 import socket
 from project.messenger import Messenger
-from project.helper import *
 from project.protocol import Protocol
+import glob
+import os
 
 
 # golsd
 class Client:
-    host = env_vars['client_host']
-    port = env_vars['server_listening_port']
+    host = Protocol.env_vars['client_host']
+    port = Protocol.env_vars['server_listening_port']
     msg = Messenger
     users_data_client = dict()
 
@@ -49,7 +50,7 @@ class Client:
 
         # cls.msg.recieve_message(cls)
 
-        console_line(cls.sendMessageClient, cls.users_data_client, "send something to server: ")
+        Protocol.console_line(cls.sendMessageClient, cls.users_data_client, "send something to server: ")
         sys.exit()
 
     # received and sending as well message struct
@@ -72,15 +73,15 @@ class Client:
                 data = Protocol.encode_file(validation)
         elif command == Protocol.commands["read"]:
             if cls.handle_sent_write(data) != '':
-                return "file already exist in folder storage/client. use override function to update from server,  or delete it"
+                return "file already exist in folder storage/client. use override function to update from server"
         elif command == Protocol.commands["appendfile"]:
             validation = cls.handle_sent_write(data)
             if validation == '':
                 return "file does not exit in folder storage/client , please check before writing command by LOCAL_LS"
 
-        payload = format_payload(data, command)
-        payload = message_encoder(payload, command, 2)
-        msg = message_encoder(payload, command)
+        payload = Protocol.format_payload(data, command)
+        payload = Protocol.message_encoder(payload, command, 2)
+        msg = Protocol.message_encoder(payload, command)
         # print("_____________client payload")
         # print(payload)
         # print("________________")
@@ -97,7 +98,7 @@ class Client:
             userSocket = cls.users_data_client["socket"]
         msg = userSocket.recv(1024)
         # data_loaded = pickle.loads(msg.encode(Protocol.message_encoding))
-        msg = message_decoder(msg)
+        msg = Protocol.message_decoder(msg)
         if "command" in msg:
             command = msg["command"]
         if command == Protocol.commands["MESSAGE"]:
@@ -125,7 +126,7 @@ class Client:
     @classmethod
     def local_ls(cls):
         txtfiles = []
-        path = path_to_storage() + "/client"
+        path = Protocol.path_to_storage() + "/client"
         for file in glob.glob(path + "/*.*"):
             txtfiles.append(file)
         index = 1
@@ -151,7 +152,7 @@ class Client:
         try:
             file_index = int(cmd[1])
             index = 1
-            path = path_to_storage() + "/client"
+            path = Protocol.path_to_storage() + "/client"
             for file in glob.glob(path + "/*.*"):
                 if file_index == index:
                     path = file
@@ -160,7 +161,7 @@ class Client:
 
         except ValueError:
             filename = cmd[1]
-            path = path_to_storage() + "/client/" + filename
+            path = Protocol.path_to_storage() + "/client/" + filename
 
         if os.path.isfile(path):
             return path
@@ -174,7 +175,7 @@ class Client:
         print(type(response))
         print("+++++++++++++++_______________")
         data = response['data']
-        path = path_to_storage() + "/client/"
+        path = Protocol.path_to_storage() + "/client/"
         full_path = path + "/" + data['file_name'] + data['ext']
         return cls.store_file(full_path, data)
 
@@ -182,7 +183,7 @@ class Client:
     @classmethod
     def handle_overread(cls, response):
         data = response['data']
-        path = path_to_storage() + "/client/"
+        path = Protocol.path_to_storage() + "/client/"
         full_path = path + data['file_name'] + data['ext']
         if os.path.isfile(full_path):
             os.remove(full_path)

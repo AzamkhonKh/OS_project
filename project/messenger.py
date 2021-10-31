@@ -1,5 +1,5 @@
 from project.server import Server
-from project.helper import env_vars
+from project.protocol import Protocol
 import socket
 
 
@@ -8,7 +8,7 @@ import socket
 class Messenger:
     hostname = socket.gethostname()
     IPAddr = socket.gethostbyname(hostname)
-    port = env_vars["messenger_port"]
+    port = Protocol.env_vars["messenger_port"]
 
     @classmethod
     def recieve_message(cls, client):

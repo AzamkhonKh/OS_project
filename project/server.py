@@ -1,16 +1,17 @@
+import glob
+import os
 import socket
 import _thread as thread
 import sys
 import signal
-from project.helper import *
 from project.protocol import Protocol
 from pathlib import Path
 
 
 class Server:
     s = None
-    port = env_vars['server_listening_port']
-    host = env_vars['server_host']
+    port = Protocol.env_vars['server_listening_port']
+    host = Protocol.env_vars['server_host']
     # it will be getted by ip in network or from env file (in future)
     users = dict()
 
@@ -72,15 +73,13 @@ class Server:
     def create_session(cls, c, user_data):
 
         try:
-            console_line(cls.receive_message_from_client, user_data, "", False)
+            Protocol.console_line(cls.receive_message_from_client, user_data, "", False)
             if user_data["name"] in cls.users:
                 del cls.users[user_data["name"]]
         except Exception as e:
             print('Error occured client closed message : ' + str(e))
             c.close()
             sys.exit()
-        finally:
-            print('out from try catch successfully !')
 
         # pop_result = cls.users.pop(user_data["name"],None)
         # if pop_result == user_data["name"]:
@@ -96,14 +95,14 @@ class Server:
 
     @classmethod
     def send_message_to_client(cls, data, conn, command: str = Protocol.commands["MESSAGE"]):
-        payload = format_payload(data, command)
+        payload = Protocol.format_payload(data, command)
 
         # print("This is payload")
         # print(payload)
         # print(command)
         # print("______________")
-        message = message_encoder(payload, command, 2)
-        msg = message_encoder(message, command)
+        message = Protocol.message_encoder(payload, command, 2)
+        msg = Protocol.message_encoder(message, command)
 
         # print("This is msg")
         # print(msg)
@@ -117,7 +116,7 @@ class Server:
         # msg = cls.recvallMine(conn)
         msg = conn.recv(1024)
         # data_loaded = pickle.loads(msg.encode(Protocol.message_encoding))
-        msg = message_decoder(msg, conn)
+        msg = Protocol.message_decoder(msg, conn)
         if msg["command"] == Protocol.commands["MESSAGE"]:
             message = msg["data"]["message"]
         elif msg["command"] == Protocol.commands["AUTH"]:
@@ -146,7 +145,7 @@ class Server:
         # print("_________________")
         if "name" in user_data:
             print(f"received something from {user_data['name']}: " + message)
-        if message != env_vars["exit_word"]:
+        if message != Protocol.env_vars["exit_word"]:
             cls.send_message_to_client("recieved OK", conn)
         else:
             cls.send_message_to_client(message, conn)
@@ -187,7 +186,7 @@ class Server:
     def handle_file(cls, msg, user_data):
         decoded_file = msg
         # print(msg)
-        dir_name = path_to_storage() + "/server/" + user_data['name']
+        dir_name = Protocol.path_to_storage() + "/server/" + user_data['name']
         Path(dir_name).mkdir(parents=True, exist_ok=True)
         message = "file should be crated " + dir_name
         # print(message)
@@ -211,7 +210,7 @@ class Server:
         result = ''
         index = 1
         conn = user_data["connection"]
-        full_path = path_to_storage() + "/server/" + user_data['name']
+        full_path = Protocol.path_to_storage() + "/server/" + user_data['name']
         Path(full_path).mkdir(parents=True, exist_ok=True)
         files_available = False
         for file in glob.glob(full_path + "/*.*"):
@@ -253,7 +252,7 @@ class Server:
     def handle_write(cls, msg, user_data):
         decoded_file = msg
         conn = user_data["connection"]
-        dir_name = path_to_storage() + "/server/" + user_data['name']
+        dir_name = Protocol.path_to_storage() + "/server/" + user_data['name']
         Path(dir_name).mkdir(parents=True, exist_ok=True)
         data = decoded_file['data']
         # print("________ data before store file")
@@ -267,7 +266,7 @@ class Server:
     @classmethod
     def handle_overwrite(cls, msg, user_data):
         data = msg['data']
-        dir_name = path_to_storage() + "/server/" + user_data['name']
+        dir_name = Protocol.path_to_storage() + "/server/" + user_data['name']
         full_path = dir_name + "/" + data['file_name'] + data['ext']
         if os.path.isfile(full_path):
             os.remove(full_path)
@@ -284,7 +283,7 @@ class Server:
         conn = user_data["connection"]
         file_name = msg['data']['file_name']
         # check does file exist
-        dir_name = path_to_storage() + "/server/" + user_data['name']
+        dir_name = Protocol.path_to_storage() + "/server/" + user_data['name']
         full_path = dir_name + "/" + file_name
         if os.path.isfile(full_path):
             # if msg['command'] == Protocol.commands["overread"]:
@@ -299,7 +298,7 @@ class Server:
     def handle_append(cls, msg, user_data):
         conn = user_data["connection"]
         file_name = msg['data']['file_name']
-        dir_name = path_to_storage() + "/server/" + user_data['name']
+        dir_name = Protocol.path_to_storage() + "/server/" + user_data['name']
         full_path = dir_name + "/" + file_name
         # print(full_path)
         if os.path.isfile(full_path):
